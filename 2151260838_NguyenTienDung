@@ -1,0 +1,71 @@
+from google.colab import drive
+drive.mount('/content/drive')
+
+import pandas as pd
+import numpy as np
+
+path = "/content/drive/MyDrive/Tiny.csv"
+data = pd.read_csv(path, encoding="latin-1",sep=";")
+data
+
+msv = 2151260838
+col = msv%12 + 1
+data_8 = data[[str(col)]]
+data_8.head(5)
+
+from sklearn.mixture import GaussianMixture
+from sklearn.cluster import KMeans
+from sklearn.cluster import DBSCAN
+
+# Lấy dữ liệu từ cột được chọn
+selected_data = data.iloc[:, col]
+
+from yellowbrick.cluster import KElbowVisualizer
+print('TÌm cụm tối ưu Kmeans')
+selected_data_2d = selected_data.values.reshape(-1, 1)
+kmeans = KMeans(random_state=23, n_init=10)
+Elbow_M = KElbowVisualizer(kmeans, k=(2, 12))
+Elbow_M.fit(selected_data_2d)
+Elbow_M.show()
+
+k = 5
+# Thực hiện Gaussian Mixture Model
+gmm = GaussianMixture(n_components=k) # Số components có thể điều chỉnh
+gmm.fit(selected_data.values.reshape(-1, 1))
+gmm_labels = gmm.predict(selected_data.values.reshape(-1, 1))
+# Thực hiện KMeans clustering
+kmeans = KMeans(n_clusters=k, n_init=10) # Số clusters có thể điều chỉnh
+kmeans.fit(selected_data.values.reshape(-1, 1))
+kmeans_labels = kmeans.predict(selected_data.values.reshape(-1, 1))
+# Thực hiện DBSCAN
+dbscan = DBSCAN(eps=0.5, min_samples=5) # Tham số có thể điều chỉnh
+dbscan_labels = dbscan.fit_predict(selected_data.values.reshape(-1, 1))
+# In ra kết quả của mỗi mô hình
+print("Gaussian Mixture Model labels:")
+print(gmm_labels)
+print("\nKMeans labels:")
+print(kmeans_labels)
+print("\nDBSCAN labels:")
+print(dbscan_labels)
+# Mô tả kịch bản tách dữ liệu
+print("\nKịch bản tách data:")
+print("Dữ liệu được đọc từ tệp CSV 'Gia SMP va SMPcap 2021(Giá thị trường SMP).csv'.")
+print(f"Chọn cột số {col} để phân tích.")
+print("Sử dụng Gaussian Mixture Model với số components là 2, KMeans clustering với số clusters là 2, và DBSCAN để phân tích dữ liệu.")
+
+import matplotlib.pyplot as plt
+# Biểu đồ Gaussian Mixture Model
+plt.figure(figsize=(10, 5))
+plt.subplot(1, 3, 1)
+plt.scatter(range(len(selected_data)), selected_data, c=gmm_labels, cmap='viridis')
+plt.title('Gaussian Mixture Model')
+# Biểu đồ KMeans
+plt.subplot(1, 3, 2)
+plt.scatter(range(len(selected_data)), selected_data, c=kmeans_labels, cmap='viridis')
+plt.title('KMeans')
+# Biểu đồ DBSCAN
+plt.subplot(1, 3, 3)
+plt.scatter(range(len(selected_data)), selected_data, c=dbscan_labels, cmap='viridis')
+plt.title('DBSCAN')
+plt.tight_layout()
+plt.show()
